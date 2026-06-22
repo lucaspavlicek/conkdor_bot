@@ -20,12 +20,15 @@ def create_timestamp(t: int):
         minute=0,   
         tzinfo=ZoneInfo('America/New_York')
     )
-            
+    
+    if local_dt < now:
+        local_dt += datetime.timedelta(days=1)
+
     return f'<t:{int(local_dt.timestamp())}:t>'
 
 time_choices = [
     app_commands.Choice(
-        name=f'{create_timestamp(hour)} Local time / {hour}:00 Eastern time',
+        name=f'{hour}:00 Eastern time',
         value=str(hour)
     )
     for hour in range(24)

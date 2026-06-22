@@ -2,6 +2,7 @@
 .env
 .DS_Store
 database.db
+conkdor.venv/
 
 # ---template---
 # Byte-compiled / optimized / DLL files

@@ -1,5 +1,7 @@
 #---manually set---
 .env
+.DS_Store
+database.db
 
 # ---template---
 # Byte-compiled / optimized / DLL files

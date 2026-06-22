@@ -132,9 +132,13 @@ class GathersCommands(commands.Cog):
 
     @app_commands.command(name="manual_reset", description="Manually reset gathers in this channel right now")
     async def manual_reset(self, interaction: discord.Interaction):
+        await interaction.response.defer(ephemeral=False)
+
         channel_id = getattr(interaction.channel, 'id', interaction.channel_id)
 
         await reset_gathers(self.bot, channel_id)
+
+        await interaction.followup.send("Done.", ephemeral=True)
 
 
     @app_commands.command(name="remove_gathers", description="Stop resetting gathers in this channel")

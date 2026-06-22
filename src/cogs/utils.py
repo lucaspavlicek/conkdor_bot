@@ -21,7 +21,7 @@ def create_timestamp(t: int):
         tzinfo=ZoneInfo('America/New_York')
     )
     
-    if local_dt < now:
+    if local_dt.hour < now.hour:
         local_dt += datetime.timedelta(days=1)
 
     return f'<t:{int(local_dt.timestamp())}:t>'

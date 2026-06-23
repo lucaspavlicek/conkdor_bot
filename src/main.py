@@ -84,12 +84,20 @@ async def setup(bot: ConkdorBot):
             channel_id INTEGER NOT NULL,
             emoji TEXT NOT NULL,
             timestamp TIME NOT NULL,
+            date TEXT NOT NULL,
             username TEXT NOT NULL,
             user_id INT NOT NULL,
             message_id INT NOT NULL,
             FOREIGN KEY(channel_id) REFERENCES gather_channels(id) ON DELETE CASCADE
         )
         """)
+
+        async with bot.db.execute("PRAGMA table_info(data)") as pragma_cursor:
+            data_columns = [row[1] for row in await pragma_cursor.fetchall()]
+
+        if 'date' not in data_columns:
+            await bot.db.execute("ALTER TABLE data ADD COLUMN date TEXT")
+
     await bot.db.commit()
     print("Database connected and tables verified.")
 

@@ -47,7 +47,7 @@ async def record_reactions(bot: discord.Client, channel_id: int, limit: int = 10
         print(f"Channel {channel_id} does not support message history.")
         return []
 
-    reaction_records = []
+    est_date = datetime.datetime.now(tz=ZoneInfo('America/New_York')).date().isoformat()
     timestamp_regex = r'<t:(\d+):t>'
 
     try:
@@ -67,10 +67,10 @@ async def record_reactions(bot: discord.Client, channel_id: int, limit: int = 10
                     async with aiosqlite.connect(db_path) as connection:
                         await connection.execute(
                             '''
-                            INSERT INTO data (channel_id, emoji, timestamp, username, user_id, message_id)
-                            VALUES (?, ?, ?, ?, ?, ?)
+                            INSERT INTO data (channel_id, emoji, timestamp, date, username, user_id, message_id)
+                            VALUES (?, ?, ?, ?, ?, ?, ?)
                             ''',
-                            (channel_id, emoji_str, target_timestamp, user.name, user.id, message.id),
+                            (channel_id, emoji_str, target_timestamp, est_date, user.name, user.id, message.id),
                         )
                         await connection.commit()
 

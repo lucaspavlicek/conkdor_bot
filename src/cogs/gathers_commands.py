@@ -27,8 +27,8 @@ class GathersCommands(commands.Cog):
         embed=Embed(title=f'Gather settings for <#{channel_id}>', color=Color.pink())
         embed.add_field(name='Start Time:', value=create_timestamp(start_val), inline=False)
         embed.add_field(name='End Time:', value=create_timestamp(end_val), inline=False)
-        embed.add_field(name='Message:', value=message_val if message_val is not None else "None", inline=False)
         embed.add_field(name='Resets at:', value=create_timestamp((end_val+1)%24), inline=False)
+        embed.add_field(name='Message on reset:', value=message_val if message_val is not None else "None", inline=False)
         embed.add_field(name='Reminder Time:', value=create_timestamp(reminder_time_val) if reminder_time_val is not None else "None", inline=False)
         embed.add_field(name='Reminder Message:', value=reminder_message_val if reminder_message_val else "None", inline=False)
 

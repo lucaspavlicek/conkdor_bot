@@ -30,7 +30,8 @@ class ConkdorBot(commands.Bot):
         if not getattr(self, "_synced", False):
             try:
                 dev_guild = os.getenv('DEV_GUILD_ID')
-                if dev_guild:
+
+                if not dev_guild:
 
                     guild_object = discord.Object(id=int(dev_guild))
                     
@@ -71,6 +72,8 @@ async def setup(bot: ConkdorBot):
             start_time TIME NOT NULL,
             end_time TIME NOT NULL,
             message TEXT,
+            reminder_time INTEGER,
+            reminder_message TEXT,
             FOREIGN KEY(guild_id) REFERENCES guilds(id) ON DELETE CASCADE
         )
         """)

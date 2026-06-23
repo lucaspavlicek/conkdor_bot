@@ -25,8 +25,11 @@ class HourlyTasks(commands.Cog):
     async def hourly_loop(self):
         hour = datetime.datetime.now(tz=ZoneInfo('America/New_York')).hour
         print(f'Running hourly check for {hour}:00 Eastern time.')
+        
+        await self.process_resets(hour)
+        await self.send_reminders(hour)
 
-
+    async def process_resets(self, hour):
         async with aiosqlite.connect(db_path) as connection:
             async with connection.execute(
                 '''
@@ -39,10 +42,28 @@ class HourlyTasks(commands.Cog):
         print(f'Found {len(ids)} channels to reset for this hour.')
 
         for channel_id in ids:
-
             await record_reactions(self.bot, channel_id[0])
-
             await reset_gathers(self.bot, channel_id[0])
+
+    async def send_reminders(self, hour):
+        async with aiosqlite.connect(db_path) as connection:
+            async with connection.execute(
+                '''
+                SELECT id, reminder_message FROM gather_channels WHERE reminder_time = ?;
+                ''',
+                (hour,),
+            ) as cursor:
+                channels = await cursor.fetchall()
+
+        print(f'Found {len(channels)} channels to send reminders for this hour.')
+
+        for channel_id, reminder_message in channels:
+            channel = self.bot.get_channel(channel_id)
+            if channel is not None and reminder_message:
+                try:
+                    await channel.send(reminder_message)
+                except Exception as e:
+                    print(f"Error sending reminder to channel {channel_id}: {e}")
 
 async def setup(bot):
     await bot.add_cog(HourlyTasks(bot))

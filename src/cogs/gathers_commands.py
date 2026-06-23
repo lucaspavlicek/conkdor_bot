@@ -20,13 +20,18 @@ class GathersCommands(commands.Cog):
         channel_id: int,
         start_val: int,
         end_val: int,
-        message_val: str | None
+        message_val: str | None,
+        reminder_time_val: int | None = None,
+        reminder_message_val: str | None = None
     ):
         embed=Embed(title=f'Gather settings for <#{channel_id}>', color=Color.pink())
         embed.add_field(name='Start Time:', value=create_timestamp(start_val), inline=False)
         embed.add_field(name='End Time:', value=create_timestamp(end_val), inline=False)
         embed.add_field(name='Message:', value=message_val if message_val is not None else "None", inline=False)
         embed.add_field(name='Resets at:', value=create_timestamp((end_val+1)%24), inline=False)
+        embed.add_field(name='Reminder Time:', value=create_timestamp(reminder_time_val) if reminder_time_val is not None else "None", inline=False)
+        embed.add_field(name='Reminder Message:', value=reminder_message_val if reminder_message_val else "None", inline=False)
+
 
         return embed
 
@@ -36,12 +41,17 @@ class GathersCommands(commands.Cog):
     @app_commands.describe(end_time="Last gather time of the day. Default 00:00 Eastern.")
     @app_commands.choices(end_time=time_choices)
     @app_commands.describe(message="Message when gathers reset. No message by default.")
+    @app_commands.describe(reminder_time="Hour to send a reminder. None by default.")
+    @app_commands.choices(reminder_time=time_choices)
+    @app_commands.describe(reminder_message="Message to send at reminder time. Blank by default.")
     async def setup_gathers(
         self,
         interaction: discord.Interaction,
         start_time: str = time_choices[12].value,
         end_time: str = time_choices[0].value,
-        message: str | None = None
+        message: str | None = None,
+        reminder_time: str | None = None,
+        reminder_message: str = ""
     ):
         await interaction.response.defer(ephemeral=False)
 
@@ -52,23 +62,27 @@ class GathersCommands(commands.Cog):
         start_val = int(getattr(start_time, "value", start_time))
         end_val = int(getattr(end_time, "value", end_time))
         message_val = message if message is not None else None
+        reminder_time_val = int(getattr(reminder_time, "value", reminder_time)) if reminder_time is not None else None
+        reminder_message_val = reminder_message if reminder_message else ""
 
         sql = '''
-        INSERT INTO gather_channels (id, name, guild_id, start_time, end_time, message)
-        VALUES (?, ?, (SELECT id FROM guilds WHERE id = ?), ?, ?, ?)
+        INSERT INTO gather_channels (id, name, guild_id, start_time, end_time, message, reminder_time, reminder_message)
+        VALUES (?, ?, (SELECT id FROM guilds WHERE id = ?), ?, ?, ?, ?, ?)
         ON CONFLICT(id) DO UPDATE SET
             name = excluded.name,
             start_time = excluded.start_time,
             end_time = excluded.end_time,
-            message = excluded.message
+            message = excluded.message,
+            reminder_time = excluded.reminder_time,
+            reminder_message = excluded.reminder_message
         ;'''
 
         try:
             async with aiosqlite.connect(db_path) as connection:
-                await connection.execute(sql, (channel_id, channel_name, guild_discord_id, start_val, end_val, message_val))
+                await connection.execute(sql, (channel_id, channel_name, guild_discord_id, start_val, end_val, message_val, reminder_time_val, reminder_message_val))
                 await connection.commit()
 
-            embed = self.create_embed(channel_id, start_val, end_val, message_val)
+            embed = self.create_embed(channel_id, start_val, end_val, message_val, reminder_time_val, reminder_message_val)
             await interaction.followup.send(embed=embed, ephemeral=False)
         except Exception as exc:
             await interaction.followup.send(f"Failed to save gather channel: {exc}", ephemeral=False)
@@ -83,7 +97,7 @@ class GathersCommands(commands.Cog):
         try:
             async with aiosqlite.connect(db_path) as connection:
                 async with connection.execute(
-                    'SELECT start_time, end_time, message FROM gather_channels WHERE id = ?',
+                    'SELECT start_time, end_time, message, reminder_time, reminder_message FROM gather_channels WHERE id = ?',
                     (channel_id,)
                 ) as cursor:
                     row = await cursor.fetchone()
@@ -92,8 +106,8 @@ class GathersCommands(commands.Cog):
                 await interaction.followup.send("No gather settings found for this channel. You can set them up using `/setup_gathers`.")
                 return
 
-            start_val, end_val, message_val = row
-            embed = self.create_embed(channel_id, start_val, end_val, message_val)
+            start_val, end_val, message_val, reminder_time_val, reminder_message_val = row
+            embed = self.create_embed(channel_id, start_val, end_val, message_val, reminder_time_val, reminder_message_val)
             await interaction.followup.send(embed=embed, ephemeral=False)
         except Exception as exc:
             await interaction.followup.send(f"Failed to fetch settings: {exc}", ephemeral=False)

@@ -16,10 +16,6 @@ class DataCommands(commands.Cog):
     def __init__(self, bot):
         self.bot = bot
 
-    @app_commands.command(name="view_settings", description="View gather settings in this channel")
-    async def view_settings(self, interaction: discord.Interaction):
-        return
-
     @app_commands.command(name="gather_graph", description="View gathers vs hour graph for this channel")
     @app_commands.describe(
         emoji="Emoji to show reaction data for",

@@ -102,6 +102,7 @@ async def setup(bot: ConkdorBot):
     print("Database connected and tables verified.")
 
     # 3. Load your extensions/cogs here
+    await bot.load_extension("cogs.data_commands")
     await bot.load_extension("cogs.gathers_commands")
     await bot.load_extension("cogs.hourly_tasks")
     await bot.load_extension("cogs.guild_events")

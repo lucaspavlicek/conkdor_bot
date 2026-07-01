@@ -23,19 +23,20 @@ class DataCommands(commands.Cog):
         start_date="Start date (YYYY-MM-DD) to get data for. Gets all data by default.",
         end_date="End date (YYYY-MM-DD) to get data for. Gets all data by default."
     )
-    async def reactions_graph(self, interaction: discord.Interaction, emoji: str, user: str, start_date: str | None = None, end_date: str | None = None):
+    async def reactions_graph(self, interaction: discord.Interaction, emoji: str, user: str = '@everyone', start_date: str | None = None, end_date: str | None = None):
         await interaction.response.defer(ephemeral=False)
 
         channel_id = getattr(interaction.channel, 'id', interaction.channel_id)
-        channel_name = getattr(interaction.channel, 'name', str(interaction.channel))
-        users = get_users_by_role(user)
+        user_ids = [str(user.id) for user in get_users_by_role(user)]
 
         async with aiosqlite.connect(db_path) as connection:
             async with connection.execute(
-                "SELECT timestamp FROM data WHERE channel_id = ? AND emoji = ? AND user in ?",
-                (channel_id, emoji, users)
+                "SELECT user_id, timestamp FROM data WHERE channel_id = ? AND emoji = ?",
+                (channel_id, emoji)
             ) as cursor:
                 rows = await cursor.fetchall()
+
+        rows = [row[1] for row in rows if row[0] in user_ids]
 
         if not rows:
             await interaction.followup.send("No data found for this channel and emoji.")
@@ -47,18 +48,18 @@ class DataCommands(commands.Cog):
         if start_date:
             start_date = datetime.datetime.fromisoformat(start_date).date()
         else:
-            start_date = datetime.datetime.fromtimestamp(rows[0][0], tz=ZoneInfo("America/New_York")).date()
+            start_date = datetime.datetime.fromtimestamp(rows[0], tz=ZoneInfo("America/New_York")).date()
         
 
         if end_date:
             end_date = datetime.datetime.fromisoformat(end_date).date()
         else:
-            end_date = datetime.datetime.fromtimestamp(rows[-1][0], tz=ZoneInfo("America/New_York")).date()
+            end_date = datetime.datetime.fromtimestamp(rows[-1], tz=ZoneInfo("America/New_York")).date()
 
         days = (end_date - start_date).days + 1
 
         for row in rows:
-            d = datetime.datetime.fromtimestamp(row[0], tz=ZoneInfo("America/New_York"))
+            d = datetime.datetime.fromtimestamp(row, tz=ZoneInfo("America/New_York"))
             if d.date() >= start_date and d.date() <= end_date:
                 counts[d.hour] += 1
 

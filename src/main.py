@@ -29,17 +29,9 @@ class ConkdorBot(commands.Bot):
         # Run a one-time sync of the application command tree after login
         if not getattr(self, "_synced", False):
             try:
-                dev_guild = os.getenv('DEV_GUILD_ID')
-
-                if dev_guild:
-                    guild_object = discord.Object(id=int(dev_guild))
-
-                    self.tree.copy_global_to(guild=guild_object)
-                    await self.tree.sync(guild=guild_object)
-                    print(f"Synced app commands to dev guild {dev_guild}")
-                else:
-                    await self.tree.sync()
-                    print("Synced global app commands")
+                await self.tree.sync()
+                print("Synced global app commands")
+                
             except Exception as e:
                 print('Error syncing command tree:', e)
             self._synced = True

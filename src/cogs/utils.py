@@ -118,14 +118,14 @@ async def reset_gathers(bot, channel_id):
 
     print("Gathers reset complete.")
 
-def get_users_by_role(role):
-
-    if isinstance(role, discord.Role):
-        return (member for member in role.members)
-    elif isinstance(role, discord.User):
-        return (role,)
-    else:
-        return []
+def get_users_by_role(target: discord.Role | discord.Member | discord.User) -> list[discord.Member | discord.User]:
+    if isinstance(target, discord.Role):
+        return list(target.members)
+    if isinstance(target, discord.Member):
+        return [target]
+    if isinstance(target, discord.User):
+        return [target]
+    return []
     
 plot_color_palette = {
     'background_color': "#5F5F5F",

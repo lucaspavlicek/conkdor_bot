@@ -23,11 +23,10 @@ class DataCommands(commands.Cog):
         start_date="Start date (YYYY-MM-DD) to get data for. Gets all data by default.",
         end_date="End date (YYYY-MM-DD) to get data for. Gets all data by default."
     )
-    async def reactions_graph(self, interaction: discord.Interaction, emoji: str, user: str = '@everyone', start_date: str | None = None, end_date: str | None = None):
+    async def reactions_graph(self, interaction: discord.Interaction, emoji: str, user: discord.Role | discord.Member | discord.User | None = None, start_date: str | None = None, end_date: str | None = None):
         await interaction.response.defer(ephemeral=False)
 
         channel_id = getattr(interaction.channel, 'id', interaction.channel_id)
-        user_ids = [str(user.id) for user in get_users_by_role(user)]
 
         async with aiosqlite.connect(db_path) as connection:
             async with connection.execute(
@@ -36,7 +35,11 @@ class DataCommands(commands.Cog):
             ) as cursor:
                 rows = await cursor.fetchall()
 
-        rows = [row[1] for row in rows if row[0] in user_ids]
+        if not user:
+            user_ids = None
+        else:
+            user_ids = [str(user.id) for user in get_users_by_role(user)]
+            rows = [row[1] for row in rows if row[0] in user_ids]
 
         if not rows:
             await interaction.followup.send("No data found for this channel and emoji.")
@@ -48,29 +51,28 @@ class DataCommands(commands.Cog):
         if start_date:
             start_date = datetime.datetime.fromisoformat(start_date).date()
         else:
-            start_date = datetime.datetime.fromtimestamp(rows[0], tz=ZoneInfo("America/New_York")).date()
+            start_date = datetime.datetime.fromtimestamp(rows[0][1], tz=ZoneInfo("America/New_York")).date()
         
 
         if end_date:
             end_date = datetime.datetime.fromisoformat(end_date).date()
         else:
-            end_date = datetime.datetime.fromtimestamp(rows[-1], tz=ZoneInfo("America/New_York")).date()
+            end_date = datetime.datetime.fromtimestamp(rows[-1][1], tz=ZoneInfo("America/New_York")).date()
 
         days = (end_date - start_date).days + 1
 
         for row in rows:
-            d = datetime.datetime.fromtimestamp(row, tz=ZoneInfo("America/New_York"))
+            d = datetime.datetime.fromtimestamp(row[1], tz=ZoneInfo("America/New_York"))
             if d.date() >= start_date and d.date() <= end_date:
                 counts[d.hour] += 1
 
         averages = [count / days for count in counts]
 
-
         plt.figure(figsize=(6, 4), facecolor=plot_color_palette['background_color'])
         ax = plt.gca()
         ax.set_facecolor(plot_color_palette['axis_color'])
 
-        plt.bar(hours, counts, color=plot_color_palette['object_color'])
+        plt.bar(hours, averages, color=plot_color_palette['object_color'])
         plt.title(f'Average Reaction Count from {start_date.isoformat()} to {end_date.isoformat()}')
         plt.xlabel('Hour [Eastern Time]')
         plt.ylabel('Average Reaction Count')
@@ -83,6 +85,8 @@ class DataCommands(commands.Cog):
         plt.close()
 
         discord_file = discord.File(fp=buffer, filename="reactions_graph.png")
+
+        print(f"Sending graph to Discord channel {channel_id}")
 
         await interaction.followup.send(
             file=discord_file

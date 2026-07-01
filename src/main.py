@@ -31,10 +31,9 @@ class ConkdorBot(commands.Bot):
             try:
                 dev_guild = os.getenv('DEV_GUILD_ID')
 
-                if not dev_guild:
-
+                if dev_guild:
                     guild_object = discord.Object(id=int(dev_guild))
-                    
+
                     self.tree.copy_global_to(guild=guild_object)
                     await self.tree.sync(guild=guild_object)
                     print(f"Synced app commands to dev guild {dev_guild}")

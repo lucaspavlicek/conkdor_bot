@@ -117,3 +117,18 @@ async def reset_gathers(bot, channel_id):
         print(f"Failed to purge or send messages in channel {channel_id}: {exc}")
 
     print("Gathers reset complete.")
+
+def get_users_by_role(role):
+
+    if isinstance(role, discord.Role):
+        return (member for member in role.members)
+    elif isinstance(role, discord.User):
+        return (role,)
+    else:
+        return []
+    
+plot_color_palette = {
+    'background_color': "#5F5F5F",
+    'axis_color': "#2B2B4B",
+    'object_color': "#B082A7",
+}

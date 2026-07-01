@@ -16,14 +16,14 @@ class DataCommands(commands.Cog):
     def __init__(self, bot):
         self.bot = bot
 
-    @app_commands.command(name="gather_graph", description="View gathers vs hour graph for this channel")
+    @app_commands.command(name="reactions_graph", description="View reactions vs hour graph for this channel for a chosen reaction emoji")
     @app_commands.describe(
         emoji="Emoji to show reaction data for",
         user="User/role to filter by. Defaults to everyone.",
         start_date="Start date (YYYY-MM-DD) to get data for. Gets all data by default.",
         end_date="End date (YYYY-MM-DD) to get data for. Gets all data by default."
     )
-    async def gather_graph(self, interaction: discord.Interaction, emoji: str, user: str, start_date: str | None = None, end_date: str | None = None):
+    async def reactions_graph(self, interaction: discord.Interaction, emoji: str, user: str, start_date: str | None = None, end_date: str | None = None):
         await interaction.response.defer(ephemeral=False)
 
         channel_id = getattr(interaction.channel, 'id', interaction.channel_id)

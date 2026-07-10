@@ -169,8 +169,8 @@ class DataCommands(commands.Cog):
         embed=Embed(title=f'Reactions data for {emoji} in <#{channel_id}>', color=Color.pink())
         embed.set_image(url="attachment://hour_plot.png")
 
-        embed.add_field(name='First Day of Data:', value=self.create_date_timestamp(start_date, 0), inline=True)
-        embed.add_field(name='Last Day of Data:', value=self.create_date_timestamp(end_date, 23), inline=True)
+        embed.add_field(name='First Day of Data:', value=start_date.strftime('%Y-%m-%d'), inline=True)
+        embed.add_field(name='Last Day of Data:', value=end_date.strftime('%Y-%m-%d'), inline=True)
         embed.add_field(name='Days of data:', value=str(days), inline=True)
 
         embed.add_field(name='Reactions Counted:', value=str(sum(hourly_counts)), inline=True)

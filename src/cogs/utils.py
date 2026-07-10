@@ -55,7 +55,7 @@ async def record_reactions(bot: discord.Client, channel_id: int, limit: int = 10
         async for message in channel.history(limit=limit):
             match = re.search(timestamp_regex, message.content)
             if not match:
-                continue  # Skip if no matching timestamp pattern found
+                continue
             
             target_timestamp = match.group(1)
 
@@ -128,7 +128,7 @@ def get_users_by_role(target: discord.Role | discord.Member | discord.User) -> l
     return []
     
 plot_color_palette = {
-    'background_color': "#5F5F5F",
+    'background_color': "#00000000",
     'axis_color': "#2B2B4B",
-    'object_color': "#B082A7",
+    'object_colors': ["#EB45A1", "#EB65A1", "#EB85A1"]
 }

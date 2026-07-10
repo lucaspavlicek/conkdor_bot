@@ -14,19 +14,15 @@ from cogs.utils import *
 class ConkdorBot(commands.Bot):
     def __init__(self, *args, **kwargs):
         super().__init__(*args, **kwargs)
-        # Placeholder attribute to access the DB later
         self.db: aiosqlite.Connection | None = None 
-        # Ensure we only sync the command tree once
         self._synced: bool = False
 
     async def close(self):
-        # Clean up and close the database safely when the bot stops
         if self.db:
             await self.db.close()
         await super().close()
 
     async def on_ready(self):
-        # Run a one-time sync of the application command tree after login
         if not getattr(self, "_synced", False):
             try:
                 await self.tree.sync()
@@ -40,12 +36,10 @@ class ConkdorBot(commands.Bot):
 
 bot = ConkdorBot(command_prefix="!", intents=discord.Intents.all())
 
-# The async setup function where the DB connection lives
 async def setup(bot: ConkdorBot):
-    # 1. Connect to the SQLite file asynchronously
+
     bot.db = await aiosqlite.connect(db_path)
     
-    # 2. Setup your database tables if they do not exist yet
     await bot.db.execute("PRAGMA foreign_keys = ON")
     async with bot.db.cursor() as cursor:
         await cursor.execute("""
@@ -92,7 +86,7 @@ async def setup(bot: ConkdorBot):
     await bot.db.commit()
     print("Database connected and tables verified.")
 
-    # 3. Load your extensions/cogs here
+    await bot.load_extension("cogs.misc_commands")
     await bot.load_extension("cogs.data_commands")
     await bot.load_extension("cogs.gathers_commands")
     await bot.load_extension("cogs.hourly_tasks")

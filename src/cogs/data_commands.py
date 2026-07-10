@@ -1,5 +1,7 @@
+from calendar import weekday
 import io
 import datetime
+import traceback
 from zoneinfo import ZoneInfo
 from pathlib import Path
 
@@ -16,14 +18,22 @@ class DataCommands(commands.Cog):
     def __init__(self, bot):
         self.bot = bot
 
-    @app_commands.command(name="reactions_graph", description="View reactions vs hour graph for this channel for a chosen reaction emoji")
+    def create_date_timestamp(self, d: datetime.date, h: int = 0):
+        t = datetime.time(h, 0, 0)
+        dt = datetime.datetime.combine(d, t, tzinfo=ZoneInfo('America/New_York'))
+        return f'<t:{int(dt.timestamp())}:d>'
+    
+    def count_weekdays(self, start_date: datetime.date, end_date: datetime.date, weekday: int):
+        return max(1, sum(1 for i in range((end_date - start_date).days) if (start_date + datetime.timedelta(days=i)).weekday() == weekday))
+
+    @app_commands.command(name="gathers_stats", description="View gather stats for this channel.")
     @app_commands.describe(
-        emoji="Emoji to show reaction data for",
-        user="User/role to filter by. Defaults to everyone.",
+        emoji="Emoji to show reaction stats for.",
         start_date="Start date (YYYY-MM-DD) to get data for. Gets all data by default.",
         end_date="End date (YYYY-MM-DD) to get data for. Gets all data by default."
     )
-    async def reactions_graph(self, interaction: discord.Interaction, emoji: str, user: discord.Role | discord.Member | discord.User | None = None, start_date: str | None = None, end_date: str | None = None):
+    async def gathers_stats(self, interaction: discord.Interaction, emoji: str, start_date: str | None = None, end_date: str | None = None):
+        
         await interaction.response.defer(ephemeral=False)
 
         channel_id = getattr(interaction.channel, 'id', interaction.channel_id)
@@ -35,18 +45,23 @@ class DataCommands(commands.Cog):
             ) as cursor:
                 rows = await cursor.fetchall()
 
-        if not user:
-            user_ids = None
-        else:
-            user_ids = [str(user.id) for user in get_users_by_role(user)]
-            rows = [row[1] for row in rows if row[0] in user_ids]
-
         if not rows:
             await interaction.followup.send("No data found for this channel and emoji.")
             return
+        
+        async with aiosqlite.connect(db_path) as connection:
+            async with connection.execute(
+                "SELECT start_time, end_time FROM gather_channels WHERE id = ?",
+                (channel_id, )
+            ) as cursor:
+                row = await cursor.fetchone()
 
-        hours = range(24)
-        counts = [0] * 24
+        if not row:
+            await interaction.followup.send("No gather settings found for this channel. You can set them up using `/setup_gathers`.")
+            return
+
+        start_time = int(row[0])
+        end_time = int(row[1])
 
         if start_date:
             start_date = datetime.datetime.fromisoformat(start_date).date()
@@ -61,34 +76,110 @@ class DataCommands(commands.Cog):
 
         days = (end_date - start_date).days + 1
 
+        # hourly counts
+        hours = list(range(24))
+        hourly_counts = [0] * 24
+
         for row in rows:
-            d = datetime.datetime.fromtimestamp(row[1], tz=ZoneInfo("America/New_York"))
-            if d.date() >= start_date and d.date() <= end_date:
-                counts[d.hour] += 1
+            dt = datetime.datetime.fromtimestamp(row[1], tz=ZoneInfo("America/New_York"))
+            if dt.date() >= start_date and dt.date() <= end_date:
+                hourly_counts[dt.hour] += 1
 
-        averages = [count / days for count in counts]
+        averages = [count / days for count in hourly_counts]
 
-        plt.figure(figsize=(6, 4), facecolor=plot_color_palette['background_color'])
-        ax = plt.gca()
-        ax.set_facecolor(plot_color_palette['axis_color'])
+        if end_time > start_time:
+            plot_hours = hours[start_time:end_time + 1]
+            plot_averages = averages[start_time:end_time + 1]
+        else:
+            plot_hours = hours[start_time:24] + hours[0:end_time + 1]
+            plot_averages = averages[start_time:24] + averages[0:end_time + 1]
 
-        plt.bar(hours, averages, color=plot_color_palette['object_color'])
-        plt.title(f'Average Reaction Count from {start_date.isoformat()} to {end_date.isoformat()}')
-        plt.xlabel('Hour [Eastern Time]')
-        plt.ylabel('Average Reaction Count')
-        plt.xticks(hours[::2], [f'{str(h*2)}:00' for h in range(12)])
-        plt.xticks(rotation=60)
+        # weekly counts
+        reaction_counts = []
+        counter = 0
+        last_dt = datetime.datetime.fromtimestamp(rows[0][1], tz=ZoneInfo("America/New_York"))
+        for row in rows:
+            dt = datetime.datetime.fromtimestamp(row[1], tz=ZoneInfo("America/New_York"))
+            if dt.date() >= start_date and dt.date() <= end_date:
+                if dt == last_dt:
+                    counter += 1
+                else:
+                    reaction_counts.append((last_dt.weekday(), counter))
+                    counter = 1
+                
+                last_dt = dt
+
+        x = list(range(7))
+
+        weekly_counts4 = [0] * 7
+        weekly_counts5 = [0] * 7
+        weekly_counts6 = [0] * 7
+        for weekday, count in reaction_counts:
+            if count > 3:
+                weekly_counts4[weekday] += 1
+            
+            if count > 4:
+                weekly_counts5[weekday] += 1
+                
+            if count > 5:
+                weekly_counts6[weekday] += 1
+
+        weekly_av4 = [weekly_counts4[i] / self.count_weekdays(start_date, end_date, i) for i in range(7)]
+        weekly_av5 = [weekly_counts5[i] / self.count_weekdays(start_date, end_date, i) for i in range(7)]
+        weekly_av6 = [weekly_counts6[i] / self.count_weekdays(start_date, end_date, i) for i in range(7)]
+
+        plt.rcParams.update({
+            'text.color': 'white',
+            'axes.labelcolor': 'white',
+            'axes.edgecolor': 'white',
+            'xtick.color': 'white',
+            'ytick.color': 'white',
+            'figure.facecolor': plot_color_palette['background_color'],
+            'axes.facecolor': plot_color_palette['axis_color'],
+        })
+
+        fig, axs = plt.subplots(nrows=2, ncols=1, figsize=(7, 6))
+
+        # hourly plot
+        axs[0].bar(range(len(plot_hours)), plot_averages, color=plot_color_palette['object_colors'][0])
+        axs[0].set_title(f'Average Count per day')
+        axs[0].set_xlabel('Hour [Eastern Time]')
+        axs[0].set_ylabel('Average Reaction Count')
+        axs[0].set_xticks(range(len(plot_hours)))
+        axs[0].set_xticklabels([f'{str(h)}:00' for h in plot_hours], rotation=60)
+
+        # weekday plot
+        axs[1].bar([i-0.2 for i in x], weekly_av4, width=0.2, label='>= 4 reactions', color=plot_color_palette['object_colors'][0])
+        axs[1].bar(x, weekly_av5, width=0.2, label='>= 5 reactions', color=plot_color_palette['object_colors'][1])
+        axs[1].bar([i+0.2 for i in x], weekly_av6, width=0.2, label='>= 6 reactions', color=plot_color_palette['object_colors'][2])
+        axs[1].set_xticks(x)
+        axs[1].set_xticklabels(['Monday', 'Tuesday', 'Wednesday', 'Thursday', 'Friday', 'Saturday', 'Sunday'], rotation=60)
+        axs[1].set_ylim(0, max(weekly_av4) * 1.25)
+        axs[1].set_ylabel("Average number of gathers")
+        axs[1].legend(loc='upper left', ncols=3, fontsize="small")
+        axs[1].set_title(f'Average number of gathers per weekday')
+
+        fig.tight_layout()
 
         buffer = io.BytesIO()
-        plt.savefig(buffer, format='png', bbox_inches='tight')
+        fig.savefig(buffer, format='png', bbox_inches='tight')
         buffer.seek(0)
-        plt.close()
+        plt.close(fig)
 
-        discord_file = discord.File(fp=buffer, filename="reactions_graph.png")
+        embed=Embed(title=f'Reactions data for {emoji} in <#{channel_id}>', color=Color.pink())
+        embed.set_image(url="attachment://hour_plot.png")
 
-        print(f"Sending graph to Discord channel {channel_id}")
+        embed.add_field(name='Start Date:', value=self.create_date_timestamp(start_date, start_time), inline=True)
+        embed.add_field(name='End Date:', value=self.create_date_timestamp(end_date, end_time), inline=True)
+        embed.add_field(name='Days of data:', value=str(days), inline=True)
+
+        embed.add_field(name='Most Common Hour:', value=f'{create_timestamp(hourly_counts.index(max(hourly_counts)))}', inline=True)
+        embed.add_field(name='Most Common Weekday:', value=f'{["Monday", "Tuesday", "Wednesday", "Thursday", "Friday", "Saturday", "Sunday"][weekly_av4.index(max(weekly_av4))]}', inline=True)
+
+        discord_file = discord.File(fp=buffer, filename="hour_plot.png")
 
         await interaction.followup.send(
+            embed=embed,
             file=discord_file
         )
 

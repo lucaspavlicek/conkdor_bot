@@ -35,7 +35,7 @@ class GathersCommands(commands.Cog):
 
         return embed
 
-    @app_commands.command(name="setup_gathers", description="Setup gathers in the current channel")
+    @app_commands.command(name="setup_gathers", description="Setup gathers in the current channel.")
     @app_commands.describe(start_time="First gather time of the day. Default 12:00 Eastern.")
     @app_commands.choices(start_time=time_choices)
     @app_commands.describe(end_time="Last gather time of the day. Default 00:00 Eastern.")
@@ -88,7 +88,7 @@ class GathersCommands(commands.Cog):
             await interaction.followup.send(f"Failed to save gather channel: {exc}", ephemeral=False)
 
 
-    @app_commands.command(name="view_settings", description="View gather settings in this channel")
+    @app_commands.command(name="view_settings", description="View gather settings in this channel.")
     async def view_settings(self, interaction: discord.Interaction):
         await interaction.response.defer(ephemeral=False)
 
@@ -112,7 +112,7 @@ class GathersCommands(commands.Cog):
         except Exception as exc:
             await interaction.followup.send(f"Failed to fetch settings: {exc}", ephemeral=False)
 
-    @app_commands.command(name="find_gather_channels", description="List the channels which have gathers setup in this server")
+    @app_commands.command(name="find_gather_channels", description="List the channels which have gathers setup in this server.")
     async def find_gather_channels(self, interaction: discord.Interaction):
         await interaction.response.defer(ephemeral=False)
 
@@ -144,7 +144,7 @@ class GathersCommands(commands.Cog):
             await interaction.followup.send(f"Failed to fetch gather channels: {exc}", ephemeral=False)
 
 
-    @app_commands.command(name="manual_reset", description="Manually reset gathers in this channel right now")
+    @app_commands.command(name="manual_reset", description="Manually reset gathers in this channel right now.")
     async def manual_reset(self, interaction: discord.Interaction):
         await interaction.response.defer(ephemeral=False)
 
@@ -155,7 +155,7 @@ class GathersCommands(commands.Cog):
         await interaction.followup.send("Done.", ephemeral=True)
 
 
-    @app_commands.command(name="remove_gathers", description="Stop resetting gathers in this channel")
+    @app_commands.command(name="remove_gathers", description="Stop resetting gathers in this channel.")
     async def remove_gathers(self, interaction: discord.Interaction):
         await interaction.response.defer(ephemeral=False)
 

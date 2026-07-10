@@ -169,12 +169,15 @@ class DataCommands(commands.Cog):
         embed=Embed(title=f'Reactions data for {emoji} in <#{channel_id}>', color=Color.pink())
         embed.set_image(url="attachment://hour_plot.png")
 
-        embed.add_field(name='Start Date:', value=self.create_date_timestamp(start_date, start_time), inline=True)
-        embed.add_field(name='End Date:', value=self.create_date_timestamp(end_date, end_time), inline=True)
+        embed.add_field(name='First Day of Data:', value=self.create_date_timestamp(start_date, datetime.time(0, 0, 0)), inline=True)
+        embed.add_field(name='Last Day of Data:', value=self.create_date_timestamp(end_date, datetime.time(23, 59, 59)), inline=True)
         embed.add_field(name='Days of data:', value=str(days), inline=True)
 
+        embed.add_field(name='Reactions Counted:', value=str(sum(hourly_counts)), inline=True)
         embed.add_field(name='Most Common Hour:', value=f'{create_timestamp(hourly_counts.index(max(hourly_counts)))}', inline=True)
-        embed.add_field(name='Most Common Weekday:', value=f'{["Monday", "Tuesday", "Wednesday", "Thursday", "Friday", "Saturday", "Sunday"][weekly_av4.index(max(weekly_av4))]}', inline=True)
+        embed.add_field(name='Most Common Day:', value=f'{["Monday", "Tuesday", "Wednesday", "Thursday", "Friday", "Saturday", "Sunday"][weekly_av4.index(max(weekly_av4))]}', inline=True)
+
+        embed.set_footer(text=f"A 'gather' is counted when at least 4/5/6 reactions are made on a single hour. The second plot shows the average number of gathers per day at the 4/5/6 thresholds.")
 
         discord_file = discord.File(fp=buffer, filename="hour_plot.png")
 

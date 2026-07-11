@@ -1,0 +1,17 @@
+[Unit]
+Description=conkdor bot service
+After=network.target
+
+[Service]
+Type=simple
+User=ubuntu
+
+WorkingDirectory=/home/ubuntu/conkdor_bot
+
+ExecStart=/home/ubuntu/conkdor_bot/venv/bin/python /home/ubuntu/conkdor_bot/src/main.py
+
+Restart=always
+RestartSec=5
+
+[Install]
+WantedBy=multi-user.target

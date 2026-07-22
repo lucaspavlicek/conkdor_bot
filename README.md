@@ -16,13 +16,13 @@ A discord bot for managing a daily gathering channel.
 
 The bot can be inviting from a mutual server using the "+ Add App" button in the bot's profile. Or you can invite it using the link below
 
-[https://discord.com/oauth2/authorize?client_id=1503624392192557127&permissions=412317379648&integration_type=0&scope=bot](https://discord.com/oauth2/authorize?client_id=1503624392192557127&permissions=412317379648&integration_type=0&scope=bot)
+[https://discord.com/oauth2/authorize?client_id=1503624392192557127](https://discord.com/oauth2/authorize?client_id=1503624392192557127)
 
 ## Setup
 
 **Warning: the bot will fully clear the channel where gathers are set up. You will lose all the messages in that channel. Only setup gathers in a channel dedicated to gathering, and note that it will clear the messages every day.**
 
-Navigate to the channel where you would like to setup gathers and run ```/setup_gathers```. Parameters:
+Navigate to the channel where you would like to setup gathers and make sure the bot has permission to view and send messages in that channel. Then, run ```/setup_gathers```. Parameters:
 - ```start_time```, ```end_time``` The first and last gather times. The bot will post a timestamp for each hour inbetween, including the start and end time.
 - ```message``` Message to send at the end of the gathers. It is optional.
 - ```reminder_time``` and ```reminder_message``` Can be used to send a reminder message at a custom time. Note that both fields need to be filled out for the reminder to work.
@@ -47,4 +47,8 @@ The bot stores some information about reactions every time it resets a channel. 
 - ```/remove_gathers``` Removes the gathers in the current channel. The bot will stop resetting gathers every day and the channel will go back to "normal".
 - ```/manual_reset``` Reset the gathers in the current channel right now. Note that this reset will NOT count towards gather stats.
 - ```/next_00``` See what the next top-of-the-hour (:00) is in major time zones. Works in any channel and is useful for converting timezones.
+
+## Contact
+@sillygooooose on Discord
+lucas.pavlicek@gmail.com
 

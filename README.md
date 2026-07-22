@@ -1,7 +1,8 @@
 # Conkdor Bot
 
-A discord bot for managing a daily gathing channel.
-![Gather Example](./images/gather_example.png)
+A discord bot for managing a daily gathering channel.
+
+<img src="images/gather_example.png" width="400" />
 
 - Times are converted to user's local timezone.
 - Automatically resets the reactions at the end of the day.
